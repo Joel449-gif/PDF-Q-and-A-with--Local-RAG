@@ -1,53 +1,51 @@
 # PDF Q&A with Local RAG
 
-A Retrieval-Augmented Generation system that lets you upload PDFs and ask questions.
-Runs locally with Ollama or deploys to Streamlit Cloud with Google Gemini (free).
+A Retrieval-Augmented Generation system that lets you upload PDFs, TXTs, and Markdown files and ask questions. Runs entirely locally with Ollama.
 
 ## How it works
 
 ```
 PDF Upload → Text Extraction → Chunking → Embeddings → ChromaDB
-                                                           ↓
+                                                            ↓
 User Question → Semantic Search → Context Injection → LLM → Answer
 ```
 
-## Local dev (Ollama)
+## Prerequisites
 
-**Prerequisites:** [Ollama](https://ollama.ai/) with models pulled:
+[Ollama](https://ollama.ai/) with these models:
+
 ```bash
 ollama pull nomic-embed-text
 ollama pull llama3.2:3b
 ```
 
-**Run:**
+## Run
+
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Deploy to Streamlit Cloud (free)
+## Features
 
-1. Get a free Gemini API key at https://aistudio.google.com/apikey
-2. Push this repo to GitHub
-3. Go to https://streamlit.io/cloud → New app → select your repo
-4. In Settings → Secrets, add:
-   ```toml
-   GEMINI_API_KEY = "your-key-here"
-   ```
-5. Deploy — your app will be live at `yourapp.streamlit.app`
+- PDF / TXT / Markdown support
+- Streaming responses
+- Source citation with relevance scores
+- Per-file document management
+- LRU question cache (invalidates on re-index)
+- Prompt injection hardening (7-rule system prompt)
+- Modern dark-theme UI
 
 ## Project structure
 
 ```
 rag-demo/
-├── app.py              # Streamlit UI
-├── ingest.py           # PDF parsing + chunking + indexing
-├── rag_engine.py       # Retrieval + generation
-├── llm_client.py       # LLM abstraction (Gemini / Ollama)
-├── embeddings.py       # Embedding provider (Gemini / Ollama)
-├── vector_store.py     # ChromaDB wrapper
-├── config.py           # Settings
-├── .streamlit/
-│   └── secrets.toml    # API key template
+├── app.py           # Streamlit UI
+├── ingest.py        # PDF parsing + chunking + indexing
+├── rag_engine.py    # Retrieval + generation
+├── llm_client.py    # Ollama LLM client
+├── embeddings.py    # Embedding provider
+├── vector_store.py  # ChromaDB wrapper
+├── config.py        # Settings
 └── requirements.txt
 ```
