@@ -182,22 +182,14 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "processing" not in st.session_state:
     st.session_state.processing = False
-use_gemini = bool(config.GEMINI_API_KEY)
 
 if "ollama_ok" not in st.session_state:
     st.session_state.ollama_ok = None
 
-col1, col2 = st.columns([0.85, 0.15])
-with col1:
-    st.title("PDF Q&A with Local RAG")
-    st.markdown('<p style="color:#5a5e72; font-size:0.9rem; margin-top:-0.5rem;">Chat with your PDFs — powered by local AI</p>', unsafe_allow_html=True)
-with col2:
-    backend = "GEMINI" if use_gemini else "LOCAL"
-    st.markdown(f'<div style="margin-top:1.2rem; text-align:right;"><span style="background:#1a1d27; color:#34d399; padding:0.2rem 0.7rem; border-radius:20px; font-size:0.75rem; font-weight:600; border:1px solid #1e2a24;">● {backend}</span></div>', unsafe_allow_html=True)
+st.title("PDF Q&A with Local RAG")
+st.markdown('<p style="color:#5a5e72; font-size:0.9rem; margin-top:-0.5rem;">Chat with your PDFs — powered by local AI</p>', unsafe_allow_html=True)
 
-if use_gemini:
-    st.session_state.ollama_ok = True
-elif st.session_state.ollama_ok is None:
+if st.session_state.ollama_ok is None:
     with st.spinner("Checking Ollama connection..."):
         try:
             import requests
@@ -206,7 +198,7 @@ elif st.session_state.ollama_ok is None:
         except Exception:
             st.session_state.ollama_ok = False
 
-if not st.session_state.ollama_ok and not use_gemini:
+if not st.session_state.ollama_ok:
     st.warning("Ollama is not reachable. Make sure `ollama serve` is running.", icon="⚠️")
 
 
