@@ -26,15 +26,19 @@ def _use_gemini():
 def generate(prompt: str) -> str:
     if _use_gemini():
         client = _get_gemini_client()
-        response = client.models.generate_content(
-            model=config.GEMINI_MODEL,
-            contents=prompt,
-            config={
-                "temperature": config.LLM_TEMPERATURE,
-                "max_output_tokens": config.LLM_MAX_TOKENS,
-            },
-        )
-        return response.text.strip()
+        try:
+            response = client.models.generate_content(
+                model=config.GEMINI_MODEL,
+                contents=prompt,
+                config={
+                    "temperature": config.LLM_TEMPERATURE,
+                    "max_output_tokens": config.LLM_MAX_TOKENS,
+                },
+            )
+            return response.text.strip()
+        except Exception as e:
+            logger.error("Gemini generate error: %s", e)
+            return f"Gemini API error: {e}"
     else:
         payload = {
             "model": config.OLLAMA_MODEL,
@@ -55,21 +59,24 @@ def generate(prompt: str) -> str:
 
 
 def generate_stream(prompt: str):
-    """Generator yielding text tokens from Gemini (if key set) or Ollama."""
     start = time.time()
 
     if _use_gemini():
         client = _get_gemini_client()
-        for chunk in client.models.generate_content_stream(
-            model=config.GEMINI_MODEL,
-            contents=prompt,
-            config={
-                "temperature": config.LLM_TEMPERATURE,
-                "max_output_tokens": config.LLM_MAX_TOKENS,
-            },
-        ):
-            if chunk.text:
-                yield chunk.text
+        try:
+            for chunk in client.models.generate_content_stream(
+                model=config.GEMINI_MODEL,
+                contents=prompt,
+                config={
+                    "temperature": config.LLM_TEMPERATURE,
+                    "max_output_tokens": config.LLM_MAX_TOKENS,
+                },
+            ):
+                if chunk.text:
+                    yield chunk.text
+        except Exception as e:
+            logger.error("Gemini stream error: %s", e)
+            yield f"Gemini API error: {e}"
     else:
         payload = {
             "model": config.OLLAMA_MODEL,
