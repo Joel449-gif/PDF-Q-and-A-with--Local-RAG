@@ -1,6 +1,7 @@
 import logging
 import streamlit as st
 
+import config
 from ingest import index_file, SUPPORTED_EXTENSIONS
 from rag_engine import stream_ask, ask_cached
 from vector_store import get_collection_stats, list_documents, delete_document, delete_all
@@ -189,19 +190,24 @@ with col1:
     st.title("PDF Q&A with Local RAG")
     st.markdown('<p style="color:#5a5e72; font-size:0.9rem; margin-top:-0.5rem;">Chat with your PDFs — powered by local AI</p>', unsafe_allow_html=True)
 with col2:
-    st.markdown('<div style="margin-top:1.2rem; text-align:right;"><span style="background:#1a1d27; color:#34d399; padding:0.2rem 0.7rem; border-radius:20px; font-size:0.75rem; font-weight:600; border:1px solid #1e2a24;">● LOCAL</span></div>', unsafe_allow_html=True)
+    backend = "GEMINI" if use_gemini else "LOCAL"
+    st.markdown(f'<div style="margin-top:1.2rem; text-align:right;"><span style="background:#1a1d27; color:#34d399; padding:0.2rem 0.7rem; border-radius:20px; font-size:0.75rem; font-weight:600; border:1px solid #1e2a24;">● {backend}</span></div>', unsafe_allow_html=True)
 
 
-if st.session_state.ollama_ok is None:
+use_gemini = bool(config.GEMINI_API_KEY)
+
+if use_gemini:
+    st.session_state.ollama_ok = True
+elif st.session_state.ollama_ok is None:
     with st.spinner("Checking Ollama connection..."):
         try:
             import requests
-            r = requests.get(f"{'http://localhost:11434'}/api/tags", timeout=5)
+            r = requests.get(config.OLLAMA_BASE_URL + "/api/tags", timeout=5)
             st.session_state.ollama_ok = r.ok
         except Exception:
             st.session_state.ollama_ok = False
 
-if not st.session_state.ollama_ok:
+if not st.session_state.ollama_ok and not use_gemini:
     st.warning("Ollama is not reachable. Make sure `ollama serve` is running.", icon="⚠️")
 
 
