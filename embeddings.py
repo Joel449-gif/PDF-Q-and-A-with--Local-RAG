@@ -1,10 +1,8 @@
 import config
 
-_use_gemini = bool(config.GEMINI_API_KEY)
-
 
 def get_embedding_function():
-    if _use_gemini:
+    if config.GEMINI_API_KEY:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         return GoogleGenerativeAIEmbeddings(
             model="text-embedding-004",

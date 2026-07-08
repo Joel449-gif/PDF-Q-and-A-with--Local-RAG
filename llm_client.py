@@ -8,20 +8,23 @@ import config
 
 logger = logging.getLogger(__name__)
 
-_use_gemini = bool(config.GEMINI_API_KEY)
 _gemini_client = None
 
 
 def _get_gemini_client():
     global _gemini_client
-    if _gemini_client is None and _use_gemini:
+    if _gemini_client is None and config.GEMINI_API_KEY:
         from google import genai
         _gemini_client = genai.Client(api_key=config.GEMINI_API_KEY)
     return _gemini_client
 
 
+def _use_gemini():
+    return bool(config.GEMINI_API_KEY)
+
+
 def generate(prompt: str) -> str:
-    if _use_gemini:
+    if _use_gemini():
         client = _get_gemini_client()
         response = client.models.generate_content(
             model=config.GEMINI_MODEL,
@@ -55,7 +58,7 @@ def generate_stream(prompt: str):
     """Generator yielding text tokens from Gemini (if key set) or Ollama."""
     start = time.time()
 
-    if _use_gemini:
+    if _use_gemini():
         client = _get_gemini_client()
         for chunk in client.models.generate_content_stream(
             model=config.GEMINI_MODEL,
