@@ -182,6 +182,8 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "processing" not in st.session_state:
     st.session_state.processing = False
+use_gemini = bool(config.GEMINI_API_KEY)
+
 if "ollama_ok" not in st.session_state:
     st.session_state.ollama_ok = None
 
@@ -192,9 +194,6 @@ with col1:
 with col2:
     backend = "GEMINI" if use_gemini else "LOCAL"
     st.markdown(f'<div style="margin-top:1.2rem; text-align:right;"><span style="background:#1a1d27; color:#34d399; padding:0.2rem 0.7rem; border-radius:20px; font-size:0.75rem; font-weight:600; border:1px solid #1e2a24;">● {backend}</span></div>', unsafe_allow_html=True)
-
-
-use_gemini = bool(config.GEMINI_API_KEY)
 
 if use_gemini:
     st.session_state.ollama_ok = True
