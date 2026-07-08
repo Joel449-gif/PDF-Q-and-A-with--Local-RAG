@@ -8,34 +8,31 @@ import config
 
 logger = logging.getLogger(__name__)
 
-_gemini_client = None
-
-
-def _get_gemini_client():
-    global _gemini_client
-    if _gemini_client is None and config.GEMINI_API_KEY:
-        from google import genai
-        _gemini_client = genai.Client(api_key=config.GEMINI_API_KEY)
-    return _gemini_client
-
 
 def _use_gemini():
     return bool(config.GEMINI_API_KEY)
 
 
+def _gemini_request(prompt: str, stream: bool = False):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{config.GEMINI_MODEL}:{'streamGenerateContent' if stream else 'generateContent'}?key={config.GEMINI_API_KEY}"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": config.LLM_TEMPERATURE,
+            "maxOutputTokens": config.LLM_MAX_TOKENS,
+        },
+    }
+    resp = requests.post(url, json=payload, timeout=(10, config.LLM_TIMEOUT))
+    resp.raise_for_status()
+    return resp
+
+
 def generate(prompt: str) -> str:
     if _use_gemini():
-        client = _get_gemini_client()
         try:
-            response = client.models.generate_content(
-                model=config.GEMINI_MODEL,
-                contents=prompt,
-                config={
-                    "temperature": config.LLM_TEMPERATURE,
-                    "max_output_tokens": config.LLM_MAX_TOKENS,
-                },
-            )
-            return response.text.strip()
+            resp = _gemini_request(prompt, stream=False)
+            data = resp.json()
+            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
         except Exception as e:
             logger.error("Gemini generate error: %s", e)
             return f"Gemini API error: {e}"
@@ -62,18 +59,17 @@ def generate_stream(prompt: str):
     start = time.time()
 
     if _use_gemini():
-        client = _get_gemini_client()
         try:
-            for chunk in client.models.generate_content_stream(
-                model=config.GEMINI_MODEL,
-                contents=prompt,
-                config={
-                    "temperature": config.LLM_TEMPERATURE,
-                    "max_output_tokens": config.LLM_MAX_TOKENS,
-                },
-            ):
-                if chunk.text:
-                    yield chunk.text
+            resp = _gemini_request(prompt, stream=True)
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+                line = line.decode("utf-8")
+                if line.startswith("data: "):
+                    data = json.loads(line[6:])
+                    text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    if text:
+                        yield text
         except Exception as e:
             logger.error("Gemini stream error: %s", e)
             yield f"Gemini API error: {e}"
